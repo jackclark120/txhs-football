@@ -7,31 +7,38 @@ import { getStandings } from '../data/api';
 import { useSchools } from '../data/useSchools';
 import type { RootStackParamList } from '../navigation';
 import { colors, space } from '../theme';
-import type { Classification, StandingRow } from '../types';
+import type { Classification, Division, StandingRow } from '../types';
 
 const CLASSES: Classification[] = ['6A', '5A', '4A', '3A', '2A', '1A'];
+
+function districtLabel(key: string) {
+  const [div, num] = key.split('-');
+  return div ? `Div ${div} · District ${num}` : `District ${num}`;
+}
 
 export function StandingsScreen() {
   const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const schools = useSchools();
   const [cls, setCls] = useState<Classification>('6A');
-  const districts = useMemo(
-    () => [...new Set([...schools.values()].filter((s) => s.classification === cls).map((s) => s.district))].sort((a, b) => a - b),
-    [schools, cls],
-  );
-  const [district, setDistrict] = useState<number | null>(null);
+  // Keys look like "I-5" (Division I, District 5) or "-5" when the conference has no divisions.
+  const districts = useMemo(() => {
+    const keys = new Set([...schools.values()].filter((s) => s.classification === cls).map((s) => `${s.division ?? ''}-${s.district}`));
+    return [...keys].sort((a, b) => a.split('-')[0].localeCompare(b.split('-')[0]) || Number(a.split('-')[1]) - Number(b.split('-')[1]));
+  }, [schools, cls]);
+  const [district, setDistrict] = useState<string | null>(null);
   const [rows, setRows] = useState<StandingRow[]>([]);
 
   useEffect(() => setDistrict(districts[0] ?? null), [districts]);
   useEffect(() => {
     if (district == null) return setRows([]);
-    getStandings(cls, district).then(setRows);
+    const [div, num] = district.split('-');
+    getStandings(cls, (div || null) as Division | null, Number(num)).then(setRows);
   }, [cls, district]);
 
   return (
     <View style={styles.screen}>
       <Chips options={CLASSES} value={cls} onChange={setCls} />
-      {district != null && <Chips options={districts} value={district} onChange={setDistrict} label={(d) => `District ${d}`} />}
+      {district != null && <Chips options={districts} value={district} onChange={setDistrict} label={districtLabel} />}
       <View style={[styles.row, styles.head]}>
         <Text style={[styles.team, styles.headText]}>Team</Text>
         <Text style={[styles.cell, styles.headText]}>Dist</Text>

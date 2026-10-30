@@ -36,7 +36,7 @@ function TeamRow({ school, score, bold, home }: { school?: School; score: number
     <View style={styles.row}>
       <View style={[styles.swatch, { backgroundColor: school?.colors[0] ?? colors.border }]} />
       <Text style={[styles.team, bold && styles.bold]} numberOfLines={1}>
-        {school ? `${school.name} ${school.mascot}` : '…'}
+        {school ? [school.name, school.mascot].filter(Boolean).join(' ') : '…'}
         {home ? <Text style={styles.meta}>  (home)</Text> : null}
       </Text>
       <Text style={[styles.score, bold && styles.bold]}>{score ?? ''}</Text>

@@ -6,8 +6,9 @@ export type Division = 'I' | 'II';
 export interface School {
   id: string;
   name: string; // "Katy"
-  mascot: string; // "Tigers"
-  city: string;
+  // UIL lists schools by name only; mascot and city are filled in later.
+  mascot: string | null; // "Tigers"
+  city: string | null;
   classification: Classification;
   division: Division | null; // 1A-5A football split into DI/DII; 6A also uses DI/DII in playoffs
   district: number; // UIL district number within classification

@@ -1,7 +1,7 @@
 // One data API for the screens. Uses Supabase when configured, otherwise in-memory demo data.
 import { computeConsensus, validateReport, weightFor, type ValidationError } from '../lib/consensus.ts';
 import { supabase } from '../lib/supabase.ts';
-import type { Classification, ForumPost, ForumThread, Game, Period, School, ScoreReport, StandingRow } from '../types.ts';
+import type { Classification, Division, ForumPost, ForumThread, Game, Period, School, ScoreReport, StandingRow } from '../types.ts';
 import { demoGames, demoPosts, demoSchools, demoThreads } from './demo.ts';
 
 // ---- Mapping from database rows ---------------------------------------------------
@@ -153,9 +153,10 @@ export async function reportScore(gameId: string, homeScore: number, awayScore: 
   return data?.ok ? { ok: true } : { ok: false, error: data?.error ?? 'unknown' };
 }
 
-export async function getStandings(classification: Classification, district: number): Promise<StandingRow[]> {
+// 2A-5A football (and 1A) split each conference into Division I and II, each with its own districts.
+export async function getStandings(classification: Classification, division: Division | null, district: number): Promise<StandingRow[]> {
   if (!supabase) {
-    const schools = demoSchools.filter((s) => s.classification === classification && s.district === district);
+    const schools = demoSchools.filter((s) => s.classification === classification && s.division === division && s.district === district);
     return schools.map((s) => {
       const row: StandingRow = { schoolId: s.id, districtWins: 0, districtLosses: 0, overallWins: 0, overallLosses: 0, pointsFor: 0, pointsAgainst: 0 };
       for (const g of demo.games) {
@@ -172,12 +173,14 @@ export async function getStandings(classification: Classification, district: num
       return row;
     }).sort(byStanding);
   }
-  const { data, error } = await supabase
+  let q = supabase
     .from('standings')
     .select('*')
     .eq('season_year', SEASON)
     .eq('classification', classification)
     .eq('district', district);
+  q = division ? q.eq('division', division) : q.is('division', null);
+  const { data, error } = await q;
   if (error) throw error;
   return data
     .map((r: any): StandingRow => ({

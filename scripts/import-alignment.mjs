@@ -3,9 +3,10 @@
 //
 //   node scripts/import-alignment.mjs data/alignment-2026.csv 2026 2026-28 > supabase/seed.sql
 //
-// Columns: name,mascot,city,classification,division,district,region,six_man,colors,tea_campus_id
-// colors is "primary|secondary". division is I, II or blank. Re-running is safe: schools are
-// matched by name + city and their season row is replaced.
+// Needs migration 0002 (unique school names).
+// Columns: name,classification,division,district,region,six_man and optionally mascot,city,colors,tea_campus_id
+// colors is "primary|secondary". division is I, II or blank (6A). Re-running is safe: schools are
+// matched by UIL name and their season row is replaced.
 import { readFileSync } from 'node:fs';
 
 const [file, year, cycle] = process.argv.slice(2);
@@ -40,36 +41,46 @@ function parse(text) {
 const q = (s) => (s === '' || s == null ? 'null' : `'${String(s).replace(/'/g, "''")}'`);
 const [header, ...rows] = parse(readFileSync(file, 'utf8'));
 const col = Object.fromEntries(header.map((h, i) => [h, i]));
-for (const need of ['name', 'mascot', 'city', 'classification', 'district', 'region']) {
+for (const need of ['name', 'classification', 'district', 'region']) {
   if (!(need in col)) throw new Error(`missing column ${need}`);
 }
 
 const errors = [];
-const lines = [
-  'begin;',
-  `insert into seasons (year, alignment_cycle) values (${Number(year)}, ${q(cycle)}) on conflict (year) do update set alignment_cycle = excluded.alignment_cycle;`,
-];
+const schools = [];
+const seasons = [];
 rows.forEach((r, i) => {
   const v = (k) => (k in col ? r[col[k]] ?? '' : '');
   const cls = v('classification').toUpperCase();
   if (!/^[1-6]A$/.test(cls)) errors.push(`row ${i + 2}: bad classification "${cls}"`);
   if (!/^\d+$/.test(v('district'))) errors.push(`row ${i + 2}: bad district "${v('district')}"`);
+  if (!/^[1-4]$/.test(v('region'))) errors.push(`row ${i + 2}: bad region "${v('region')}"`);
   const div = v('division').toUpperCase();
   if (div && div !== 'I' && div !== 'II') errors.push(`row ${i + 2}: bad division "${div}"`);
-  const colors = v('colors') ? `array[${v('colors').split('|').map(q).join(',')}]` : "'{}'";
-  lines.push(
-    `with s as (
-  insert into schools (name, mascot, city, colors, tea_campus_id)
-  select ${q(v('name'))}, ${q(v('mascot'))}, ${q(v('city'))}, ${colors}, ${q(v('tea_campus_id'))}
-  where not exists (select 1 from schools where name = ${q(v('name'))} and city = ${q(v('city'))})
-  returning id
-), target as (select id from s union all select id from schools where name = ${q(v('name'))} and city = ${q(v('city'))})
-insert into school_seasons (school_id, season_year, classification, division, district, region, six_man)
-select id, ${Number(year)}, ${q(cls)}, ${q(div)}, ${Number(v('district'))}, ${Number(v('region'))}, ${v('six_man') === 'true'} from target limit 1
+  const colors = v('colors') ? `array[${v('colors').split('|').map(q).join(',')}]` : "'{}'::text[]";
+  schools.push(`(${q(v('name'))}, ${q(v('mascot'))}, ${q(v('city'))}, ${colors}, ${q(v('tea_campus_id'))})`);
+  seasons.push(`(${q(v('name'))}, ${q(cls)}, ${q(div)}, ${Number(v('district'))}, ${Number(v('region'))}, ${v('six_man') === 'true'})`);
+});
+const lines = [
+  'begin;',
+  `insert into seasons (year, alignment_cycle) values (${Number(year)}, ${q(cycle)})
+  on conflict (year) do update set alignment_cycle = excluded.alignment_cycle;`,
+  // Blank mascot/city/colors in the CSV never wipe values already filled in.
+  `insert into schools (name, mascot, city, colors, tea_campus_id) values
+${schools.join(',\n')}
+on conflict (name) do update set
+  mascot = coalesce(excluded.mascot, schools.mascot),
+  city = coalesce(excluded.city, schools.city),
+  colors = case when excluded.colors = '{}' then schools.colors else excluded.colors end,
+  tea_campus_id = coalesce(excluded.tea_campus_id, schools.tea_campus_id);`,
+  `insert into school_seasons (school_id, season_year, classification, division, district, region, six_man)
+select s.id, ${Number(year)}, v.classification::classification, v.division, v.district, v.region, v.six_man
+from (values
+${seasons.join(',\n')}
+) as v(name, classification, division, district, region, six_man)
+join schools s on s.name = v.name
 on conflict (school_id, season_year) do update set classification = excluded.classification, division = excluded.division,
   district = excluded.district, region = excluded.region, six_man = excluded.six_man;`,
-  );
-});
+];
 lines.push('commit;');
 if (errors.length) {
   console.error(errors.join('\n'));
