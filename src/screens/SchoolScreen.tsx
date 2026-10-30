@@ -35,9 +35,9 @@ export function SchoolScreen({ route, navigation }: ScreenProps<'School'>) {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={{ paddingBottom: space(10) }}>
       <View style={[styles.banner, { backgroundColor: school.colors[0] }]}>
-        <Text style={[styles.title, { color: school.colors[1] }]}>{school.name} {school.mascot}</Text>
+        <Text style={[styles.title, { color: school.colors[1] }]}>{[school.name, school.mascot].filter(Boolean).join(' ')}</Text>
         <Text style={[styles.sub, { color: school.colors[1] }]}>
-          {school.city} · {school.classification}{school.division ? ` Division ${school.division}` : ''} · District {school.district}
+          {school.city ? `${school.city} · ` : ''}{school.classification}{school.division ? ` Division ${school.division}` : ''} · District {school.district}
           {school.sixMan ? ' · Six-man' : ''}
         </Text>
         <Text style={[styles.record, { color: school.colors[1] }]}>{wins}-{losses}</Text>

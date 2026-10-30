@@ -24,4 +24,4 @@ npm test            # score consensus rules
 
 - `supabase/migrations/0001_init.sql`: tables, standings view, row-level security.
 - `supabase/functions/report-score`: the only way scores get written.
-- `scripts/import-alignment.mjs`: UIL alignment CSV to SQL (`data/alignment.sample.csv` shows the format).
+- `scripts/import-alignment.mjs`: UIL alignment CSV to SQL (`data/alignment-2026.csv` is the 2026-28 UIL alignment; `supabase/seed.sql` is generated from it).

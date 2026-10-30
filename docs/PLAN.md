@@ -30,7 +30,7 @@ playoff brackets, records book, private schools.
 
 ## Data model (supabase/migrations/0001_init.sql)
 
-- `schools` (name, mascot, city, colors, TEA campus id) and `school_seasons` (classification,
+- `schools` (UIL name, mascot, city, colors, TEA campus id; mascot and city start empty) and `school_seasons` (classification,
   division, district, region, six-man) per season, because UIL realigns every two years.
 - `games` with the **consensus** score fields (score, quarter, confidence, pending score).
 - `score_reports`: every fan report, kept forever for auditing and reputation.
@@ -75,6 +75,9 @@ volunteers) as verified reporters is the single biggest lever on score quality.
   be matched across sources.
 - **Mascots and colors** are not in either; fill from school sites or let fans submit them for review.
 - `scripts/import-alignment.mjs` turns that CSV into SQL and is safe to re-run each realignment.
+- Done: `data/alignment-2026.csv` has all 1,264 UIL football schools for 2026-28, extracted from UIL's 11
+  alignment PDFs (including the revised 1A DII, 3A DII and 4A DII files). Names are UIL's own short forms
+  ("Cyp. Creek", "H Bellaire"); mascots, cities and colors are still to fill in.
 - **Schedules** have no public feed either: seed from district schedules, then let school officials
   and moderators add or fix games.
 

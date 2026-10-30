@@ -58,7 +58,7 @@ function Side({ school, score, onPress }: { school?: School; score: number | nul
         <Text style={[styles.logoText, { color: school?.colors[1] ?? colors.text }]}>{school?.name.slice(0, 2).toUpperCase()}</Text>
       </View>
       <Text style={styles.name} numberOfLines={2}>{school?.name}</Text>
-      <Text style={styles.mascot}>{school?.mascot}</Text>
+      {school?.mascot ? <Text style={styles.mascot}>{school.mascot}</Text> : null}
       <Text style={styles.big}>{score ?? '–'}</Text>
     </Pressable>
   );

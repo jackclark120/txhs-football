@@ -8,10 +8,10 @@ const s = (
 ): School => ({ id, name, mascot, city, classification, division, district, region: 2, sixMan, colors });
 
 export const demoSchools: School[] = [
-  s('s1', 'Pecan Creek', 'Panthers', 'Pecan Creek', '6A', 'I', 8, ['#5B1A2E', '#E8B84A']),
-  s('s2', 'Lone Oak North', 'Mustangs', 'Lone Oak', '6A', 'I', 8, ['#0B3D91', '#FFFFFF']),
-  s('s3', 'Brazos Ridge', 'Rattlers', 'Brazos Ridge', '6A', 'I', 8, ['#1E5B2E', '#C9C9C9']),
-  s('s4', 'Caddo Lake', 'Bulldogs', 'Caddo', '6A', 'I', 8, ['#000000', '#D4AF37']),
+  s('s1', 'Pecan Creek', 'Panthers', 'Pecan Creek', '6A', null, 8, ['#5B1A2E', '#E8B84A']),
+  s('s2', 'Lone Oak North', 'Mustangs', 'Lone Oak', '6A', null, 8, ['#0B3D91', '#FFFFFF']),
+  s('s3', 'Brazos Ridge', 'Rattlers', 'Brazos Ridge', '6A', null, 8, ['#1E5B2E', '#C9C9C9']),
+  s('s4', 'Caddo Lake', 'Bulldogs', 'Caddo', '6A', null, 8, ['#000000', '#D4AF37']),
   s('s5', 'Mesquite Flats', 'Longhorns', 'Mesquite Flats', '4A', 'II', 11, ['#BF5700', '#FFFFFF']),
   s('s6', 'Sabine Valley', 'Eagles', 'Sabine', '4A', 'II', 11, ['#4B2E83', '#FFD100']),
   s('s7', 'Llano Bend', 'Hornets', 'Llano Bend', '4A', 'II', 11, ['#C8102E', '#000000']),
